@@ -16,7 +16,7 @@
     "start": "node dist/server.js"
   },
   "files": [
-    "build"
+    "dist"
   ],
   "devDependencies": {
     "@types/node": "^24.0.1",
