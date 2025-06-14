@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node build/server.js"
+    "start": "node dist/server.js"
   },
   "files": [
     "build"
