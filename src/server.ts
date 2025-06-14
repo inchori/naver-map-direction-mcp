@@ -1,111 +1,197 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/http.js";
-import { z } from "zod"
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { z } from 'zod'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const NAVER_DIRECTION_BASE = process.env.NAVER_MAP_DIRECTION_API_URL
 const NAVER_GEO_BASE = process.env.NAVER_MAP_GEO_API_URL
-const NAVER_CLIENT_ID = process.env.NAVER_MAP_CLIENT_ID;
-const NAVER_CLIENT_SECRET = process.env.NAVER_MAP_CLIENT_SECRET;
+const NAVER_CLIENT_ID = process.env.NAVER_MAP_CLIENT_ID
+const NAVER_CLIENT_SECRET = process.env.NAVER_MAP_CLIENT_SECRET
 
 const server = new McpServer({
-    name: "naver-map-direction",
-    version: "1.0.0",
-    capabilities: {
-        resources: {},
-        tools: {}
-    }
+	name: 'naver-map-direction',
+	version: '1.0.0',
+	capabilities: {
+		resources: {},
+		tools: {
+			'get-geo': {},
+		},
+	},
 })
 
 async function makeNaverMapRequest<T>(url: string): Promise<T | null> {
-    const headers = {
-        "x-ncp-apigw-api-key-id": NAVER_CLIENT_ID ?? "",
-        "x-ncp-apigw-api-key": NAVER_CLIENT_SECRET ?? "",
-        Accept: "application/json"
-    };
+	const headers = {
+		'x-ncp-apigw-api-key-id': NAVER_CLIENT_ID ?? '',
+		'x-ncp-apigw-api-key': NAVER_CLIENT_SECRET ?? '',
+		Accept: 'application/json',
+	}
 
-    try {
-        const response = await fetch(url, { headers });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return (await response.json()) as T;
-    } catch (error) {
-        console.error("Error making Naver Map request:", error);
-        return null;
-    }
+    console.log('[NaverMapRequest] URL:', url)
+	console.log('[NaverMapRequest] Headers:', headers)
+
+	try {
+		const response = await fetch(url, { headers })
+        console.log('[NaverMapRequest] Response:', response)
+		if (!response.ok) {
+            const errText = await response.text()
+			console.error('[NaverMapRequest] Error body:', errText)
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
+		return (await response.json()) as T
+	} catch (error) {
+		console.error('Error making Naver Map request:', error)
+		return null
+	}
 }
 
 interface Meta {
-    totalCount: number;
-    page: number;
-    count: number;
+	totalCount: number;
+	page: number;
+	count: number;
 }
 
 interface Address {
-    roadAddress: string;
-    jibunAddress: string;
-    englishAddress: string;
-    x: string;
-    y: string;
-    distance: number;
+	roadAddress: string;
+	jibunAddress: string;
+	englishAddress: string;
+	x: string;
+	y: string;
+	distance: number;
 }
 
 interface GeoResponse {
-    status: string;
-    meta: Meta
-    errorMessage: string;
-    address: Address[];
+	status: string;
+	meta: Meta
+	errorMessage: string;
+	address: Address[];
+}
+
+export interface DirectionResponse {
+    code: number;
+    message: string;
+    currentDateTime: string;
+    route: {
+        traoptimal: TraoptimalRoute[];
+    };
+}
+
+export interface TraoptimalRoute {
+    summary: {
+        start: {
+            location: [number, number];
+        };
+        goal: {
+            location: [number, number];
+            dir: number;
+        };
+        distance: number;
+        duration: number;
+        departureTime: string;
+        bbox: [ [number, number], [number, number] ];
+        tollFare: number;
+        taxiFare: number;
+        fuelPrice: number;
+    };
+    path: [number, number][];
+    section: Section[];
+    guide: Guide[];
+}
+
+export interface Section {
+    pointIndex: number;
+    pointCount: number;
+    distance: number;
+    name: string;
+    congestion: number;
+    speed: number;
+}
+
+export interface Guide {
+    pointIndex: number;
+    type: number;
+    instructions: string;
+    distance: number;
+    duration: number;
 }
 
 server.tool(
-    "get-geo",
-    "Get optimized path",
-    {
-        address: z.string(),
-    },
-    async ({ address }) => {
-        const geourl = `${NAVER_GEO_BASE}/geoCode?query=${address}`;
-        console.log(geourl);
-        const geoData = await makeNaverMapRequest<GeoResponse>(geourl);
+	'get-geo',
+	'Get geo data by address',
+	{
+		address: z.string(),
+	},
+	async ({ address }) => {
+		const geourl = `${NAVER_GEO_BASE}/geocode?query=${address}`
+		const geoData = await makeNaverMapRequest<GeoResponse>(geourl)
 
-        if (!geoData) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: "Failed to retrieve geo data",
-                    },
-                ],
-            };
-        }
+		if (!geoData) {
+			return {
+				content: [
+					{
+						type: 'text',
+						text: 'Failed to retrieve geo data',
+					},
+				],
+			}
+		}
+		console.log(geoData)
 
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: JSON.stringify(geoData),
-                },
-            ],
-        };
-    },
-);
+		return {
+			content: [
+				{
+					type: 'text',
+					text: geoData.address[0].englishAddress,
+				},
+			],
+		}
+	},
+)
 
-// async function main() {
-//     const transport = new StdioServerTransport();
-//     await server.connect(transport);
-//     console.error("Naver MCP Server running on stdio");
-// }
+// server.tool(
+//     'get-direction', 
+//     'Get direction path',
+//     {
+//         start: z.string(),
+//         goal: z.string(),
+//     },
+//     async ({ start, goal }) => {
+//         const directionUrl = `${NAVER_DIRECTION_BASE}/driving?start=${start}&goal=${goal}`
+//         const directionData = await makeNaverMapRequest<DirectionResponse>(directionUrl)
+
+//         if (!directionData) {
+//             return {
+//                 content: [
+//                     {
+//                         type: 'text',
+//                         text: 'Failed to retrieve direction data',
+//                     },
+//                 ],
+//             }
+//         }
+//         console.log(directionData)
+
+//         return {
+//             content: [
+//                 {
+//                     type: 'text',
+//                     text: directionData.route.traoptimal[0].summary.distance,
+//                 },
+//             ],
+//         }
+//     }
+// )
 
 async function main() {
-    const transport = new HttpServerTransport({ port: 3000 });
-    new StdioServerTransport
-    await server.connect(transport);
-    console.error("Naver MCP Server running on http://localhost:3000");
+	const transport = new StdioServerTransport()
+	await server.connect(transport)
+	console.log('Naver MCP Server running on stdio')
 }
 
+
 main().catch((error) => {
-    console.error("Fatal error in main():", error);
-    process.exit(1);
-});
+	console.error('Fatal error in main():', error)
+	process.exit(1)
+})
 
