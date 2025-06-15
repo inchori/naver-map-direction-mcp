@@ -65,7 +65,7 @@ interface GeoResponse {
 	status: string;
 	meta: Meta
 	errorMessage: string;
-	address: Address[];
+	addresses: Address[];
 }
 
 export interface DirectionResponse {
@@ -125,6 +125,7 @@ server.tool(
 	async ({ address }) => {
 		const geourl = `${NAVER_GEO_BASE}/geocode?query=${address}`
 		const geoData = await makeNaverMapRequest<GeoResponse>(geourl)
+		console.log(geoData)
 
 		if (!geoData) {
 			return {
@@ -136,13 +137,12 @@ server.tool(
 				],
 			}
 		}
-		console.log(geoData)
 
 		return {
 			content: [
 				{
 					type: 'text',
-					text: geoData.address[0].englishAddress,
+					text: `Latitude: ${geoData.addresses[0].x}, Longitude: ${geoData.addresses[0].y}`,
 				},
 			],
 		}
