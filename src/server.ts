@@ -29,11 +29,9 @@ async function makeNaverMapRequest<T>(url: string): Promise<T | null> {
 	}
 
     console.log('[NaverMapRequest] URL:', url)
-	console.log('[NaverMapRequest] Headers:', headers)
 
 	try {
 		const response = await fetch(url, { headers })
-        console.log('[NaverMapRequest] Response:', response)
 		if (!response.ok) {
             const errText = await response.text()
 			console.error('[NaverMapRequest] Error body:', errText)
@@ -125,7 +123,6 @@ server.tool(
 	async ({ address }) => {
 		const geourl = `${NAVER_GEO_BASE}/geocode?query=${address}`
 		const geoData = await makeNaverMapRequest<GeoResponse>(geourl)
-		console.log(geoData)
 
 		if (!geoData) {
 			return {
@@ -149,39 +146,39 @@ server.tool(
 	},
 )
 
-// server.tool(
-//     'get-direction', 
-//     'Get direction path',
-//     {
-//         start: z.string(),
-//         goal: z.string(),
-//     },
-//     async ({ start, goal }) => {
-//         const directionUrl = `${NAVER_DIRECTION_BASE}/driving?start=${start}&goal=${goal}`
-//         const directionData = await makeNaverMapRequest<DirectionResponse>(directionUrl)
+server.tool(
+    'get-direction', 
+    'Get direction path',
+    {
+        start: z.string(),
+        goal: z.string(),
+    },
+    async ({ start, goal }) => {
+        const directionUrl = `${NAVER_DIRECTION_BASE}/driving?start=${start}&goal=${goal}`
+        const directionData = await makeNaverMapRequest<DirectionResponse>(directionUrl)
 
-//         if (!directionData) {
-//             return {
-//                 content: [
-//                     {
-//                         type: 'text',
-//                         text: 'Failed to retrieve direction data',
-//                     },
-//                 ],
-//             }
-//         }
-//         console.log(directionData)
+        if (!directionData) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Failed to retrieve direction data',
+                    },
+                ],
+            }
+        }
+        console.log(directionData)
 
-//         return {
-//             content: [
-//                 {
-//                     type: 'text',
-//                     text: directionData.route.traoptimal[0].summary.distance,
-//                 },
-//             ],
-//         }
-//     }
-// )
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: `Guide of get direction:\n${directionData.route.traoptimal[0].guide.map(g => g.instructions).join('\n')}`,
+                },
+            ],
+        }
+    }
+)
 
 async function main() {
 	const transport = new StdioServerTransport()
