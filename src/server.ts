@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 import dotenv from 'dotenv'
+import { DirectionResponse, GeoResponse } from './types.ts'
 
 dotenv.config()
 
@@ -42,76 +43,6 @@ async function makeNaverMapRequest<T>(url: string): Promise<T | null> {
 		console.error('Error making Naver Map request:', error)
 		return null
 	}
-}
-
-interface Meta {
-	totalCount: number;
-	page: number;
-	count: number;
-}
-
-interface Address {
-	roadAddress: string;
-	jibunAddress: string;
-	englishAddress: string;
-	x: string;
-	y: string;
-	distance: number;
-}
-
-interface GeoResponse {
-	status: string;
-	meta: Meta
-	errorMessage: string;
-	addresses: Address[];
-}
-
-export interface DirectionResponse {
-    code: number;
-    message: string;
-    currentDateTime: string;
-    route: {
-        traoptimal: TraoptimalRoute[];
-    };
-}
-
-export interface TraoptimalRoute {
-    summary: {
-        start: {
-            location: [number, number];
-        };
-        goal: {
-            location: [number, number];
-            dir: number;
-        };
-        distance: number;
-        duration: number;
-        departureTime: string;
-        bbox: [ [number, number], [number, number] ];
-        tollFare: number;
-        taxiFare: number;
-        fuelPrice: number;
-    };
-    path: [number, number][];
-    section: Section[];
-    guide: Guide[];
-}
-
-export interface Section {
-    pointIndex: number;
-    pointCount: number;
-    distance: number;
-    name: string;
-    congestion: number;
-    speed: number;
-}
-
-export interface Guide {
-    pointIndex: number;
-    type: number;
-    instructions: string;
-    distance: number;
-    duration: number;
 }
 
 server.tool(
