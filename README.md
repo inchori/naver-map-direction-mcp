@@ -71,3 +71,4 @@ npm run start
 ### Future features
 - Support for public transport directions
 - Support for get GEO data by name
+- Support for compatability with Claude Desktop
