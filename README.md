@@ -4,7 +4,7 @@ The Naver Map MCP(Model Context Provider) is a MCP server for get GEO data and d
 
 Running on the stdio MCP server, it will provide the following functionalities:
 - `get-geo`: Get GEO data from Naver Map
-- `get-direciont`: Get direction data from Naver Map
+- `get-direction`: Get direction data from Naver Map
 
 # Running the Naver Map Direction MCP
 
