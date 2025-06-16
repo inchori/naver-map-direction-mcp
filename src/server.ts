@@ -29,8 +29,6 @@ async function makeNaverMapRequest<T>(url: string): Promise<T | null> {
 		Accept: 'application/json',
 	}
 
-    console.log('[NaverMapRequest] URL:', url)
-
 	try {
 		const response = await fetch(url, { headers })
 		if (!response.ok) {
@@ -98,7 +96,6 @@ server.tool(
                 ],
             }
         }
-        console.log(directionData)
 
         return {
             content: [
